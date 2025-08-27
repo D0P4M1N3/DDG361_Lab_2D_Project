@@ -19,7 +19,7 @@ public class StepHandler : MonoBehaviour
     private BoxCollider2D col;
     private bool isJumping;
     private float jumpTime;
-    private bool isGrounded;
+    [SerializeField] private bool isGrounded;
     private int lastMoveDir = 1;
 
     void Awake()
