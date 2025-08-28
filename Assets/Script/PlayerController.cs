@@ -16,7 +16,7 @@ public class PlayerController : MonoBehaviour
     [Header("Slope Check")]
     [SerializeField] private float slopeCheckDistance = 0.5f;
     [SerializeField] private float maxSlopeAngle = 46f;
-    [SerializeField] private Vector2 slopeRaycastOffset = Vector2.zero; 
+    [SerializeField] private Vector2 slopeRaycastOffset = Vector2.zero;
 
     private bool canMoveForward = true;
 
@@ -27,6 +27,13 @@ public class PlayerController : MonoBehaviour
     [Header("Sprite")]
     [SerializeField] private GameObject characterSprite;
     [SerializeField] private Vector3 spriteOffset = Vector3.zero;
+
+    [Header("Jump Buffer & Coyote Time")]
+    [SerializeField] private float coyoteTime = 0.1f;
+    [SerializeField] private float jumpBufferTime = 0.05f;
+
+    private float coyoteTimeCounter;
+    private float jumpBufferCounter;
 
     public Rigidbody2D rb;
     public bool isGrounded;
@@ -54,7 +61,6 @@ public class PlayerController : MonoBehaviour
         JumpInput();
     }
 
-
     private void FixedUpdate()
     {
         GroundCheckAndSnap();
@@ -66,19 +72,17 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            if(moveInput  != 0)
+            if (moveInput != 0)
             {
                 rb.bodyType = RigidbodyType2D.Dynamic;
             }
             else
             {
                 rb.bodyType = RigidbodyType2D.Kinematic;
-
             }
             boxCollider.enabled = true;
             capsuleCollider.enabled = false;
         }
-
     }
 
     private void GroundCheckAndSnap()
@@ -114,7 +118,7 @@ public class PlayerController : MonoBehaviour
     {
         if (boxCollider != null)
         {
-            float newHeight = Mathf.Max(0.1f, 1f - stepHeight); 
+            float newHeight = Mathf.Max(0.1f, 1f - stepHeight);
             boxColliderSize.y = newHeight;
 
             boxColliderOffset.y = (newHeight * 0.5f) + stepHeight;
@@ -135,25 +139,52 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
     }
 
-
     private void JumpInput()
     {
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // --- Handle coyote time ---
+        if (isGrounded)
+            coyoteTimeCounter = coyoteTime;
+        else
+            coyoteTimeCounter -= Time.deltaTime;
+
+        // --- Handle jump buffer ---
+        if (Input.GetButtonDown("Jump"))
+            jumpBufferCounter = jumpBufferTime;
+        else
+            jumpBufferCounter -= Time.deltaTime;
+
+        // --- Perform jump if conditions met ---
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+
+            // Distinguish between jump sources
+            if (!isGrounded && coyoteTimeCounter > 0)
+            {
+                Debug.Log("JUMP by COYOTE 🟡");
+            }
+            else if (isGrounded && jumpBufferCounter > 0)
+            {
+                Debug.Log("JUMP by BUFFER 🔵");
+            }
+            else
+            {
+                Debug.Log("NORMAL JUMP ✅");
+            }
+
+            jumpBufferCounter = 0f; // reset buffer after jump
         }
 
+        // --- Variable jump height ---
         if (Input.GetButton("Jump") && rb.linearVelocity.y > 0)
         {
             rb.gravityScale = 2.5f;
         }
-
         else if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * stepHeight);
             rb.gravityScale = 5f;
         }
-
         else
         {
             rb.gravityScale = 5f;
@@ -198,5 +229,4 @@ public class PlayerController : MonoBehaviour
             canMoveForward = true;
         }
     }
-
 }
