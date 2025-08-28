@@ -1,33 +1,37 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem.Android;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Movement Settings")]
+    [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 10f;
-    [SerializeField] private float jumpTimer = 0.3f;
-    private float jumpTimerCount = 0;
-
 
     [Header("Ground Check")]
     [SerializeField] private float groundCheckDistance = 0.3f;
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private Vector2 stepCheckerOffset = Vector2.zero;
-    [SerializeField] private float rayCastLength = 0f;
+    [SerializeField, Range(0f, 0.5f)] public float stepHeight = 0.2f;
+    [SerializeField] private Vector2 raycastOriginOffset = Vector2.zero;
 
-    [Header("Jump Buffering")]
-    [SerializeField] private float jumpBufferTime = 0.15f;
-    private float jumpBufferCounter;
+    [Header("Slope Check")]
+    [SerializeField] private float slopeCheckDistance = 0.5f;
+    [SerializeField] private float maxSlopeAngle = 46f;
+    [SerializeField] private Vector2 slopeRaycastOffset = Vector2.zero; 
 
-    [Header("Coyote Time")]
-    [SerializeField] private float coyoteTime = 0.15f;
-    private float coyoteCounter;
+    private bool canMoveForward = true;
+
+    [Header("Collider")]
+    [SerializeField] private Vector2 boxColliderOffset = new Vector2(0f, 0.5f);
+    [SerializeField] private Vector2 boxColliderSize = new Vector2(1f, 0.5f);
+
+    [Header("Sprite")]
+    [SerializeField] private GameObject characterSprite;
+    [SerializeField] private Vector3 spriteOffset = Vector3.zero;
 
     public Rigidbody2D rb;
     public bool isGrounded;
     public float moveInput;
 
-    private SpriteRenderer spriteRenderer;
     private BoxCollider2D boxCollider;
     private CapsuleCollider2D capsuleCollider;
 
@@ -35,58 +39,66 @@ public class PlayerController : MonoBehaviour
     {
         boxCollider = GetComponent<BoxCollider2D>();
         capsuleCollider = GetComponent<CapsuleCollider2D>();
+
         rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         SetupCharacter();
     }
 
     void Update()
     {
+        UpdateSprite();
+        SetupCharacter();
+        GroundCheckAndSnap();
         MovementInput();
         JumpInput();
-
     }
+
 
     private void FixedUpdate()
     {
         GroundCheckAndSnap();
-
         if (!isGrounded)
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
+            boxCollider.enabled = false;
+            capsuleCollider.enabled = true;
         }
         else
         {
-            rb.bodyType = RigidbodyType2D.Kinematic;
+            if(moveInput  != 0)
+            {
+                rb.bodyType = RigidbodyType2D.Dynamic;
+            }
+            else
+            {
+                rb.bodyType = RigidbodyType2D.Kinematic;
+
+            }
+            boxCollider.enabled = true;
+            capsuleCollider.enabled = false;
         }
+
     }
 
     private void GroundCheckAndSnap()
     {
+        float halfHeight = (boxCollider.size.y * stepHeight) * Mathf.Abs(transform.localScale.y);
+        Vector2 colliderOffset = Vector2.Scale(boxCollider.offset, transform.localScale);
 
-        Vector2 bottomCenter = (Vector2)transform.position + boxCollider.offset - new Vector2(0, boxCollider.size.y * 0.5f);
-        float halfWidth = boxCollider.size.x * 0.5f * Mathf.Abs(transform.lossyScale.x);
+        Vector2 bottomCenter = (Vector2)transform.position + colliderOffset - new Vector2(0, halfHeight);
 
-        float groundY = float.NegativeInfinity;
+        Vector2 rayOrigin = bottomCenter + Vector2.up * stepHeight + raycastOriginOffset;
 
-        for (int i = 0; i < 2; i++)
-        {
-            float t = i / 2f;
-            float offX = Mathf.Lerp(-halfWidth, halfWidth, t);
-            Vector2 origin = bottomCenter + Vector2.right * offX;
+        Debug.DrawRay(rayOrigin, Vector2.down * (groundCheckDistance + stepHeight), Color.blue);
 
-            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, groundCheckDistance, groundLayer);
-            if (hit.collider != null && i == 1)
-                groundY = hit.point.y;
-        }
+        RaycastHit2D hit = Physics2D.Raycast(rayOrigin, Vector2.down, groundCheckDistance + stepHeight, groundLayer);
 
-        if (groundY > float.NegativeInfinity && rb.linearVelocity.y <= 0)
+        if (hit.collider != null && rb.linearVelocity.y <= 0)
         {
             isGrounded = true;
 
-            float charBottomToCenter = boxCollider.size.y * 0.5f;
-            float targetY = groundY + charBottomToCenter;
+            float targetY = hit.point.y + halfHeight;
             float newY = Mathf.MoveTowards(transform.position.y, targetY, 0.2f);
 
             transform.position = new Vector3(transform.position.x, newY, transform.position.z);
@@ -98,43 +110,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
     private void SetupCharacter()
     {
         if (boxCollider != null)
         {
-            boxCollider.size = new Vector2(0.95f, 0.65f);
-            boxCollider.offset = new Vector2(0, 0.3f);
-        }
+            float newHeight = Mathf.Max(0.1f, 1f - stepHeight); 
+            boxColliderSize.y = newHeight;
 
-        if (capsuleCollider != null)
-        {
-            capsuleCollider.size = new Vector2(0.95f, 1f);
-        }
-    }
+            boxColliderOffset.y = (newHeight * 0.5f) + stepHeight;
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
+            boxCollider.size = boxColliderSize;
+            boxCollider.offset = boxColliderOffset;
+        }
     }
 
     private void MovementInput()
     {
         moveInput = Input.GetAxis("Horizontal");
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        ForwardSlopeCheck();
 
-        if (moveInput != 0)
-        {
-            rb.gravityScale = 5;
-        }
-
+        if (canMoveForward)
+            rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
         else
-        {
-            rb.gravityScale = 1;
-        }
-
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
     }
+
 
     private void JumpInput()
     {
@@ -148,10 +148,9 @@ public class PlayerController : MonoBehaviour
             rb.gravityScale = 2.5f;
         }
 
-
         else if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * stepHeight);
             rb.gravityScale = 5f;
         }
 
@@ -161,5 +160,43 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
+    private void OnDrawGizmosSelected()
+    {
+        if (boxCollider == null) return;
+
+        float halfHeight = (boxColliderSize.y * 0.5f) * Mathf.Abs(transform.lossyScale.y);
+        Vector2 colliderOffset = Vector2.Scale(boxColliderOffset, transform.lossyScale);
+        Vector2 bottomCenter = (Vector2)transform.position + colliderOffset - new Vector2(0, halfHeight);
+
+        Vector2 rayOrigin = bottomCenter + Vector2.up * stepHeight + raycastOriginOffset;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(rayOrigin, rayOrigin + Vector2.down * (groundCheckDistance + stepHeight));
+    }
+
+    private void UpdateSprite()
+    {
+        characterSprite.transform.position = transform.position + spriteOffset;
+    }
+
+    private void ForwardSlopeCheck()
+    {
+        Vector2 origin = (Vector2)transform.position + slopeRaycastOffset;
+        Vector2 direction = moveInput > 0 ? Vector2.right : Vector2.left;
+
+        RaycastHit2D hit = Physics2D.Raycast(origin, direction, slopeCheckDistance, groundLayer);
+        Debug.DrawRay(origin, direction * slopeCheckDistance, Color.green);
+
+        if (hit.collider != null)
+        {
+            float slopeAngle = Vector2.Angle(hit.normal, Vector2.up);
+            canMoveForward = slopeAngle <= maxSlopeAngle;
+        }
+        else
+        {
+            canMoveForward = true;
+        }
+    }
 
 }
