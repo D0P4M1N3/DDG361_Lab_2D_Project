@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.VisualScripting;
+using UnityEngine;
 using UnityEngine.InputSystem.Android;
 
 public class PlayerController : MonoBehaviour
@@ -32,8 +33,19 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.05f;
 
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 15f;
+    [SerializeField] private float dashDistance = 0.2f;
+    [SerializeField] private float dashCooldown = 0.5f;
+    private float dashTime;
+
     private float coyoteTimeCounter;
     private float jumpBufferCounter;
+
+    private bool isDashing = false;
+    private float dashTimer = 0f;
+    private float dashCooldownTimer = 0f;
+    private float storedGravity = 1f;
 
     public Rigidbody2D rb;
     public bool isGrounded;
@@ -41,6 +53,8 @@ public class PlayerController : MonoBehaviour
 
     private BoxCollider2D boxCollider;
     private CapsuleCollider2D capsuleCollider;
+
+    private int facingDirection = 1;
 
     void Start()
     {
@@ -50,6 +64,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
 
         SetupCharacter();
+
+        dashTime = dashDistance / dashSpeed;
     }
 
     void Update()
@@ -57,8 +73,21 @@ public class PlayerController : MonoBehaviour
         UpdateSprite();
         SetupCharacter();
         GroundCheckAndSnap();
-        MovementInput();
-        JumpInput();
+
+        if (dashCooldownTimer > 0f)
+            dashCooldownTimer -= Time.deltaTime;
+
+        if (!isDashing)
+        {
+            MovementInput();
+            JumpInput();
+        }
+
+        DashInput();
+        HandleDash();
+
+
+
     }
 
     private void FixedUpdate()
@@ -160,8 +189,18 @@ public class PlayerController : MonoBehaviour
 
         if (canMoveForward)
             rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
-        else
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+
+        
+        if (moveInput > 0.1f)
+        {
+            facingDirection = 1;
+            
+        }
+        else if (moveInput < -0.1f)
+        {
+            facingDirection = -1;
+            
+        }
     }
 
     private void JumpInput()
@@ -249,4 +288,34 @@ public class PlayerController : MonoBehaviour
             canMoveForward = true;
         }
     }
+
+    private void DashInput()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !isDashing && dashCooldownTimer <= 0f)
+        {
+            isDashing = true;
+            dashTimer = dashTime;
+            dashCooldownTimer = dashCooldown;
+
+            storedGravity = rb.gravityScale;
+            rb.gravityScale = 0f;
+        }
+    }
+
+    private void HandleDash()
+    {
+        if (isDashing)
+        {
+            dashTimer -= Time.deltaTime;
+            rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
+
+            if (dashTimer <= 0f)
+            {
+                isDashing = false;
+                rb.gravityScale = storedGravity;
+            }
+        }
+    }
+
+
 }
