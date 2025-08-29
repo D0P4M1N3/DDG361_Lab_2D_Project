@@ -91,18 +91,42 @@ public class PlayerController : MonoBehaviour
         Vector2 colliderOffset = Vector2.Scale(boxCollider.offset, transform.localScale);
 
         Vector2 bottomCenter = (Vector2)transform.position + colliderOffset - new Vector2(0, halfHeight);
+        Vector2 rayStart = bottomCenter + Vector2.up * stepHeight + raycastOriginOffset;
 
-        Vector2 rayOrigin = bottomCenter + Vector2.up * stepHeight + raycastOriginOffset;
+        // Settings for multiple rays
+        int rayCount = 10;
+        float raySpacing = boxCollider.size.x * 0.4f * Mathf.Abs(transform.localScale.x);
 
-        Debug.DrawRay(rayOrigin, Vector2.down * (groundCheckDistance + stepHeight), Color.blue);
+        bool hitSomething = false;
+        float highestGround = float.NegativeInfinity;
+        RaycastHit2D bestHit = new RaycastHit2D();
 
-        RaycastHit2D hit = Physics2D.Raycast(rayOrigin, Vector2.down, groundCheckDistance + stepHeight, groundLayer);
+        for (int i = 0; i < rayCount; i++)
+        {
+            float t = (rayCount == 1) ? 0 : (i / (float)(rayCount - 1) - 0.5f);
+            Vector2 origin = rayStart + new Vector2(t * raySpacing, 0);
 
-        if (hit.collider != null && rb.linearVelocity.y <= 0)
+            Debug.DrawRay(origin, Vector2.down * (groundCheckDistance + stepHeight), Color.blue);
+
+            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, groundCheckDistance + stepHeight, groundLayer);
+
+            if (hit.collider != null && rb.linearVelocity.y <= 0)
+            {
+                hitSomething = true;
+
+                if (hit.point.y > highestGround)
+                {
+                    highestGround = hit.point.y;
+                    bestHit = hit;
+                }
+            }
+        }
+
+        if (hitSomething)
         {
             isGrounded = true;
 
-            float targetY = hit.point.y + halfHeight;
+            float targetY = highestGround + halfHeight;
             float newY = Mathf.MoveTowards(transform.position.y, targetY, 0.2f);
 
             transform.position = new Vector3(transform.position.x, newY, transform.position.z);
@@ -113,6 +137,7 @@ public class PlayerController : MonoBehaviour
             isGrounded = false;
         }
     }
+
 
     private void SetupCharacter()
     {
@@ -141,41 +166,36 @@ public class PlayerController : MonoBehaviour
 
     private void JumpInput()
     {
-        // --- Handle coyote time ---
         if (isGrounded)
             coyoteTimeCounter = coyoteTime;
         else
             coyoteTimeCounter -= Time.deltaTime;
 
-        // --- Handle jump buffer ---
         if (Input.GetButtonDown("Jump"))
             jumpBufferCounter = jumpBufferTime;
         else
             jumpBufferCounter -= Time.deltaTime;
 
-        // --- Perform jump if conditions met ---
         if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
 
-            // Distinguish between jump sources
             if (!isGrounded && coyoteTimeCounter > 0)
             {
-                Debug.Log("JUMP by COYOTE 🟡");
+                Debug.Log("JUMP by COYOTE");
             }
             else if (isGrounded && jumpBufferCounter > 0)
             {
-                Debug.Log("JUMP by BUFFER 🔵");
+                Debug.Log("JUMP by BUFFER");
             }
             else
             {
-                Debug.Log("NORMAL JUMP ✅");
+                Debug.Log("NORMAL JUMP");
             }
 
-            jumpBufferCounter = 0f; // reset buffer after jump
+            jumpBufferCounter = 0f;
         }
 
-        // --- Variable jump height ---
         if (Input.GetButton("Jump") && rb.linearVelocity.y > 0)
         {
             rb.gravityScale = 2.5f;
