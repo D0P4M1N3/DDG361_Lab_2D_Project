@@ -2,47 +2,16 @@ using UnityEngine;
 
 public class PlayerInput : MonoBehaviour
 {
-    public float moveInput; 
-    public bool jumpInput;
-    public bool dashInput;
+    public float MoveDirection { get; private set; }
+    public bool JumpPressed { get; private set; }
+    public bool JumpReleased { get; private set; }  
+    public bool DashPressed { get; private set; }  
 
-    private void Update()
+    public void HandleInput()
     {
-        GetMovementInput();
-        GetJumpInput();
-        GetDashInput();
+        MoveDirection = Input.GetAxisRaw("Horizontal");
+        JumpPressed = Input.GetButtonDown("Jump");
+        JumpReleased = Input.GetButtonUp("Jump");
+        DashPressed = Input.GetKeyDown(KeyCode.LeftShift); 
     }
-
-    private void GetMovementInput()
-    {
-        moveInput = Input.GetAxis("Horizontal");
-    }
-
-    private void GetJumpInput()
-    {
-        if (Input.GetButton("Jump"))
-        {
-            jumpInput = true;
-        }
-
-        if (Input.GetButtonUp("Jump"))
-        {
-            jumpInput = false;
-        }
-    }
-
-
-    private void GetDashInput()
-    {
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            dashInput = true;
-        }
-        if (Input.GetKeyUp(KeyCode.LeftShift))
-        {
-            dashInput = false;
-        }
-    }
-
-
 }

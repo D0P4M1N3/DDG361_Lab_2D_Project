@@ -1,59 +1,37 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class HorizontalMovement : MonoBehaviour
 {
-    public int piority = 0;
-
-    public float moveDirection;
+    [SerializeField] private float moveSpeed = 5f;
     private Rigidbody2D rb;
-    private Ability ability;
+    private GroundChecker groundChecker;
 
-    [Header("Movement Settings")]
-    public float moveSpeed = 5f;
-    public bool canMoveForward = true;
+    public float moveDirection { get; private set; }  
+    public float Facing { get; private set; } = 1f; 
+    public bool canMoveForward;
 
-    [Header("Facing Direction")]
-    public int facingDir { get; private set; } = 1; 
-
-    private void Start()
+    private void Awake()
     {
-        ability = GetComponent<Ability>();
         rb = GetComponent<Rigidbody2D>();
+        groundChecker = GetComponent<GroundChecker>();
     }
 
-    private void Update()
+    public void Move(float direction)
     {
-        moveDirection = ability.moveDir;
-
-        if (moveDirection > 0)
-        {
-            facingDir = 1;
-        }
-        else if (moveDirection < 0)
-        {
-            facingDir = -1;
-        }
-
         if (canMoveForward)
         {
-            Move();
-        }
-    }
+            moveDirection = direction;
 
-    private void FixedUpdate()
-    {
-        if (moveDirection != 0)
-        {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-        }
-        else
-        {
-            rb.bodyType = RigidbodyType2D.Kinematic;
-        }
-    }
+            if (direction != 0)
+            {
+                Facing = Mathf.Sign(direction);
+            }
 
-    public void Move()
-    {
-        rb.linearVelocity = new Vector2(moveDirection * moveSpeed, rb.linearVelocity.y);
+            Vector2 velocity = rb.linearVelocity;
+            velocity.x = direction * moveSpeed;
+            rb.linearVelocity = velocity;
+            rb.gravityScale = 5f;
+        }
     }
 }

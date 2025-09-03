@@ -1,32 +1,22 @@
 using UnityEngine;
 
-[System.Serializable]
-public class Ability : MonoBehaviour
+public abstract class Ability : MonoBehaviour
 {
-    [Header("Player Input (auto-assigned)")]
-    [SerializeField] private PlayerInput plrInput;
+    [Tooltip("Higher priority abilities override lower ones")]
+    public int priority = 0;
 
-    [Header("Input States (updated every frame)")]
-    public float moveDir { get; private set; }
-    public bool jump { get; private set; }
-    public bool dash { get; private set; }
+    [SerializeField] protected float cooldown = 0f;
+    protected float cooldownTimer = 0f;
 
-    [Header("Ability Management")]
-    public int AbilityPriority;
-
-    private void Awake()
+    protected virtual void Update()
     {
-        if (plrInput == null)
-        {
-            plrInput = GetComponent<PlayerInput>();
-
-        }
+        if (cooldownTimer > 0f)
+            cooldownTimer -= Time.deltaTime;
     }
+    public abstract void Activate(PlayerInput input);
 
-    private void Update()
-    {
-        moveDir = plrInput.moveInput;
-        jump = plrInput.jumpInput;
-        dash = plrInput.dashInput;
-    }
+    public abstract bool IsActive();
+
+    public virtual bool CanUse() => cooldownTimer <= 0f;
+    protected void StartCooldown() => cooldownTimer = cooldown;
 }

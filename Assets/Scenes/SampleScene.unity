@@ -1928,12 +1928,12 @@ GameObject:
   - component: {fileID: 665301788}
   - component: {fileID: 665301792}
   - component: {fileID: 665301787}
-  - component: {fileID: 665301798}
   - component: {fileID: 665301797}
   - component: {fileID: 665301796}
   - component: {fileID: 665301795}
   - component: {fileID: 665301794}
   - component: {fileID: 665301799}
+  - component: {fileID: 665301800}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1949,7 +1949,7 @@ Rigidbody2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 665301785}
-  m_BodyType: 0
+  m_BodyType: 1
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
@@ -2081,10 +2081,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bb5917ae71566645b628889b15814ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  piority: 1
-  jumpTime: 0.3
-  jumpForce: 5
+  jumpForce: 15
   coyoteTime: 0.1
+  jumpBufferTime: 0.1
+  jumpCutMultiplier: 0.5
 --- !u!114 &665301795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2097,8 +2097,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e764cc24e34ad4646bbc272dfbcee830, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  piority: 1
-  moveDirection: 0
   moveSpeed: 5
   canMoveForward: 0
 --- !u!114 &665301796
@@ -2137,23 +2135,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e33bedaf80c13aa45948815d9f07fffb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveInput: 0
-  jumpInput: 0
-  dashInput: 0
---- !u!114 &665301798
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 665301785}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f7949978bfa2db4b8dead2ccec92628, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  plrInput: {fileID: 0}
-  AbilityPriority: 0
 --- !u!114 &665301799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2166,10 +2147,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca33c397d19c1d244b2b6f6a3e605410, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  priority: 2
-  dashSpeed: 15
-  dashDuration: 0.2
-  dashCooldown: 1
+  priority: 0
+  cooldown: 0.2
+  dashSpeed: 100
+  dashDuration: 1
+--- !u!114 &665301800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 665301785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 858b1aa5ef1271a4086e299bd00de89f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerInput: {fileID: 0}
+  horizontalMovement: {fileID: 0}
+  verticalMovement: {fileID: 0}
 --- !u!1 &774866812
 GameObject:
   m_ObjectHideFlags: 0

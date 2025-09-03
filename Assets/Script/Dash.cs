@@ -1,85 +1,50 @@
 using UnityEngine;
 
-public class Dash : MonoBehaviour
+public class Dash : Ability
 {
-    [Header("Ability Settings")]
-    public int priority = 0;
-
-    [Header("Dash Settings")]
     [SerializeField] private float dashSpeed = 15f;
     [SerializeField] private float dashDuration = 0.2f;
-    [SerializeField] private float dashCooldown = 0.5f;
 
     private Rigidbody2D rb;
-    private HorizontalMovement horizontalMovement;
-    private Ability ability;
-
     private bool isDashing;
     private float dashTimer;
-    private float cooldownTimer;
-    private float originalGravity;
+    private HorizontalMovement horizontalMovement;
+    private float gravityScale;
 
-    void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         horizontalMovement = GetComponent<HorizontalMovement>();
-        ability = GetComponent<Ability>();
-        originalGravity = rb.gravityScale;
+        gravityScale = rb.gravityScale;
     }
 
-    void Update()
+    public override void Activate(PlayerInput input)
     {
-        cooldownTimer -= Time.deltaTime;
-
-        if (!isDashing && ability.dash && cooldownTimer <= 0f)
-        {
-            StartDash();
-
-        }
-
         if (isDashing)
         {
-            UpdateDash();
 
-        }
-    }
 
-    private void StartDash()
-    {
-        isDashing = true;
-        dashTimer = dashDuration;
-        cooldownTimer = dashCooldown;
-
-        rb.gravityScale = 0f;
-        ability.AbilityPriority = priority;
-    }
-
-    private void UpdateDash()
-    {
-        dashTimer -= Time.deltaTime;
-
-        if (ability.AbilityPriority > priority)
-        {
+            dashTimer -= Time.deltaTime;
+            if (dashTimer <= 0f)
+            {
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                isDashing = false;
+                rb.gravityScale = gravityScale;
+                //rb.bodyType = RigidbodyType2D.Dynamic;
+            }
             return;
         }
 
-        rb.linearVelocity = new Vector2(horizontalMovement.facingDir * dashSpeed, 0f);
-        ability.AbilityPriority = priority;
-
-
-        if (dashTimer <= 0f)
+        if (input.DashPressed && CanUse())
         {
-            EndDash();
+            rb.linearVelocity = new Vector2(horizontalMovement.Facing * dashSpeed, 0);
 
+            isDashing = true;
+            dashTimer = dashDuration;
+            StartCooldown();
         }
+
     }
 
-    private void EndDash()
-    {
-        isDashing = false;
-        rb.gravityScale = originalGravity;
-        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-
-        ability.AbilityPriority = 0;
-    }
+    public override bool IsActive() => isDashing;
 }

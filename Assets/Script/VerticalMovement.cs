@@ -1,94 +1,69 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class VerticalMovement : MonoBehaviour
 {
-    public int piority = 0;
+    [Header("Jump Settings")]
+    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float coyoteTime = 0.1f;
+    [SerializeField] private float jumpBufferTime = 0.1f;
+    [SerializeField] private float jumpCutMultiplier = 0.5f; 
 
     private Rigidbody2D rb;
-    private Ability ability;
     private GroundChecker groundChecker;
 
-    [SerializeField] private float jumpTime = 0.3f; // max time you can hold jump
-    private float jumpTimeCounter;
-    private bool isJumping;
+    private float coyoteCounter;
+    private float jumpBufferCounter;
 
-    public float jumpForce = 10f;
+    private Ability[] abilities;
 
-
-    [Header("Coyote Time")]
-    [SerializeField] private float coyoteTime = 0.1f;
-    private float coyoteTimeCounter;
-
-
-    void Start()
+    private void Awake()
     {
-        groundChecker = GetComponent<GroundChecker>();
-        ability = GetComponent<Ability>();
         rb = GetComponent<Rigidbody2D>();
+        groundChecker = GetComponent<GroundChecker>();
+        abilities = GetComponents<Ability>();
     }
 
-    void Update()
+    public void HandleJump(bool jumpPressed, bool jumpReleased)
     {
+        foreach (var ability in abilities)
+        {
+            if (ability.IsActive() && ability.priority > 0)
+                return;
+        }
+
         if (groundChecker.isGrounded)
         {
-            coyoteTimeCounter = coyoteTime;
-            rb.gravityScale = 1;
-            isJumping = false;
+            coyoteCounter = coyoteTime;
         }
         else
         {
-            coyoteTimeCounter -= Time.deltaTime;
-
-            if (isJumping && ability.jump)
-            {
-                rb.gravityScale = 1;
-
-            }
-            else
-            {
-                rb.gravityScale = 5;
-
-            }
+            coyoteCounter -= Time.deltaTime;
         }
 
-        HandleJump(jumpForce);
-    }
+        if (jumpPressed)
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
 
-    private void HandleJump(float force)
-    {
+        if (jumpBufferCounter > 0f && coyoteCounter > 0f)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
 
-            if (ability.jump && coyoteTimeCounter > 0f)
-            {
-                isJumping = true;
-                jumpTimeCounter = jumpTime;
+            jumpBufferCounter = 0f;
+            coyoteCounter = 0f;
+        }
 
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
-                coyoteTimeCounter = 0f;
-            }
-
-            if (ability.jump && isJumping)
-            {
-                if (jumpTimeCounter > 0)
-                {
-                    if (ability.AbilityPriority <= piority)
-                    {
-                        ability.AbilityPriority = piority;
-                        rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
-                        jumpTimeCounter -= Time.deltaTime;
-                    }
-                }
-                else
-                {
-                    isJumping = false;
-                }
-            }
-
-            if (!ability.jump)
-            {
-                isJumping = false;
-                ability.AbilityPriority = 0;
-
-            }
-        
+        if (jumpReleased && rb.linearVelocity.y > 0f)
+        {
+            rb.linearVelocity = new Vector2(
+                rb.linearVelocity.x,
+                rb.linearVelocity.y * jumpCutMultiplier
+            );
+        }
     }
 }

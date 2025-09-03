@@ -62,7 +62,14 @@ public class GroundChecker : MonoBehaviour
         }
         else
         {
-            //rb.bodyType = RigidbodyType2D.Kinematic;
+            if (horizontalMovement.moveDirection == 0)
+            {
+                rb.bodyType = RigidbodyType2D.Kinematic;
+            }
+            else
+            {
+                rb.bodyType = RigidbodyType2D.Dynamic;
+            }
             boxCollider.enabled = true;
             capsuleCollider.enabled = false;
 
