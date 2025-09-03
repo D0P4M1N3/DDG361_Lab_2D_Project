@@ -29,6 +29,7 @@ public class PlayerInput : MonoBehaviour
     {
         GetMovementInput();
         GetJumpInput();
+        GetDashInput();
     }
 
     private void GetDashInput()
@@ -37,7 +38,7 @@ public class PlayerInput : MonoBehaviour
         {
             sprintInput = true;
         }
-        else
+        if (Input.GetKeyUp(KeyCode.LeftShift))
         {
             sprintInput= false;
         }

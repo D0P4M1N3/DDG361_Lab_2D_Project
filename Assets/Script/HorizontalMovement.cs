@@ -1,15 +1,19 @@
-using UnityEditor.Playables;
 using UnityEngine;
 
 public class HorizontalMovement : MonoBehaviour
 {
+    public float piority = 0f;
+
     public float moveDirection;
     private Rigidbody2D rb;
-
     private Ability ability;
 
+    [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    public bool canMoveForward;
+    public bool canMoveForward = true;
+
+    [Header("Facing Direction")]
+    public int facingDir { get; private set; } = 1; 
 
     private void Start()
     {
@@ -21,7 +25,16 @@ public class HorizontalMovement : MonoBehaviour
     {
         moveDirection = ability.moveDir;
 
-        if(canMoveForward)
+        if (moveDirection > 0)
+        {
+            facingDir = 1;
+        }
+        else if (moveDirection < 0)
+        {
+            facingDir = -1;
+        }
+
+        if (canMoveForward)
         {
             Move();
         }
@@ -33,17 +46,14 @@ public class HorizontalMovement : MonoBehaviour
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
         }
-        else if(moveDirection == 0)
+        else
         {
-            rb.bodyType= RigidbodyType2D.Kinematic;
+            rb.bodyType = RigidbodyType2D.Kinematic;
         }
-
     }
 
     public void Move()
     {
         rb.linearVelocity = new Vector2(moveDirection * moveSpeed, rb.linearVelocity.y);
     }
-
-
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class VerticalMovement : MonoBehaviour
 {
+    public float piority = 0f;
+
     private Rigidbody2D rb;
     private Ability ability;
     private GroundChecker groundChecker;
@@ -46,31 +48,39 @@ public class VerticalMovement : MonoBehaviour
 
     private void HandleJump()
     {
-        if (ability.jump && coyoteTimeCounter > 0f)
-        {
-            isJumping = true;
-            jumpTimeCounter = jumpTime;
 
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            coyoteTimeCounter = 0f;
-        }
-
-        if (ability.jump && isJumping)
-        {
-            if (jumpTimeCounter > 0)
+            if (ability.jump && coyoteTimeCounter > 0f)
             {
+                isJumping = true;
+                jumpTimeCounter = jumpTime;
+
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                jumpTimeCounter -= Time.deltaTime;
+                coyoteTimeCounter = 0f;
             }
-            else
+
+            if (ability.jump && isJumping)
+            {
+                if (jumpTimeCounter > 0)
+                {
+                    if (ability.AbilityPiority <= piority)
+                    {
+                        ability.AbilityPiority = piority;
+                        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                        jumpTimeCounter -= Time.deltaTime;
+                    }
+                }
+                else
+                {
+                    isJumping = false;
+                }
+            }
+
+            if (!ability.jump)
             {
                 isJumping = false;
-            }
-        }
+                ability.AbilityPiority = 0f;
 
-        if (!ability.jump)
-        {
-            isJumping = false;
         }
+        
     }
 }

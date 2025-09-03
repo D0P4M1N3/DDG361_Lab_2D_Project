@@ -1,5 +1,6 @@
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+
+[System.Serializable]
 
 public class Ability : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class Ability : MonoBehaviour
     public bool jump;
     public bool sprint;
 
+    public float AbilityPiority = 0f;   
 
     private void Awake()
     {
@@ -17,8 +19,8 @@ public class Ability : MonoBehaviour
     private void Update()
     {
         moveDir = plrInput.moveInput;
-        jump = plrInput.jumpInput;        
+        jump = plrInput.jumpInput;
         sprint = plrInput.sprintInput;
-    }
 
+    }
 }

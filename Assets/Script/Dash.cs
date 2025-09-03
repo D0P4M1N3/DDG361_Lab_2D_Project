@@ -2,33 +2,34 @@ using UnityEngine;
 
 public class Dash : MonoBehaviour
 {
-    [Header("Dash")]
-    [SerializeField] private float dashSpeed = 15f;
-    [SerializeField] private float dashDistance = 0.2f;
-    [SerializeField] private float dashCooldown = 0.5f;
+    public float piority = 0f;
 
+    [Header("Dash Settings")]
+    [SerializeField] private float dashSpeed = 15f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 0.5f;
 
     private Rigidbody2D rb;
     private HorizontalMovement horizontalMovement;
     private Ability ability;
 
-    private bool isDashing;  ///Get ability Priority from Ability.cs
-    private float dashTime;
-    private float dashTimer = 0f;
-    private float dashCooldownTimer = 0f;
-    private float storedGravity = 1f;
+    private bool isDashing;
+    private float dashTimer;
+    private float dashCooldownTimer;
+    private float storedGravity;
+
 
     void Start()
     {
-        rb= GetComponent<Rigidbody2D>();  
+        rb = GetComponent<Rigidbody2D>();
         horizontalMovement = GetComponent<HorizontalMovement>();
         ability = GetComponent<Ability>();
-        
     }
 
-    // Update is called once per frame
     void Update()
     {
+        dashCooldownTimer -= Time.deltaTime;
+
         DashInput();
         HandleDash();
     }
@@ -38,26 +39,39 @@ public class Dash : MonoBehaviour
         if (ability.sprint && !isDashing && dashCooldownTimer <= 0f)
         {
             isDashing = true;
-            dashTimer = dashTime;
+            dashTimer = dashDuration;
             dashCooldownTimer = dashCooldown;
 
             storedGravity = rb.gravityScale;
             rb.gravityScale = 0f;
+
         }
+
     }
 
     private void HandleDash()
     {
-        if (isDashing) ///Get ability Priority from Ability.cs
+        if (isDashing)
         {
             dashTimer -= Time.deltaTime;
-            rb.linearVelocity = new Vector2(horizontalMovement.moveDirection * dashSpeed, 0f);
-
-            if (dashTimer <= 0f)
+            if (ability.AbilityPiority <= piority)
             {
-                isDashing = false;
-                rb.gravityScale = storedGravity;
+                ability.AbilityPiority = piority;
+
+                rb.linearVelocity = new Vector2(horizontalMovement.facingDir * dashSpeed, 0f);
+
+                if (dashTimer <= 0f)
+                {
+                    isDashing = false;
+                    rb.gravityScale = storedGravity;
+
+                    rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+                    ability.AbilityPiority = 0f;
+                }
             }
         }
     }
+
 }
+
