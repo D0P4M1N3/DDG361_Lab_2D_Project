@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class HorizontalMovement : MonoBehaviour
 {
-    public float piority = 0f;
+    public int piority = 0;
 
     public float moveDirection;
     private Rigidbody2D rb;

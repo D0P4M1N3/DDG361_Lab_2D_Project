@@ -4,7 +4,14 @@ public class PlayerInput : MonoBehaviour
 {
     public float moveInput; 
     public bool jumpInput;
-    public bool sprintInput;
+    public bool dashInput;
+
+    private void Update()
+    {
+        GetMovementInput();
+        GetJumpInput();
+        GetDashInput();
+    }
 
     private void GetMovementInput()
     {
@@ -25,22 +32,15 @@ public class PlayerInput : MonoBehaviour
     }
 
 
-    private void Update()
-    {
-        GetMovementInput();
-        GetJumpInput();
-        GetDashInput();
-    }
-
     private void GetDashInput()
     {
         if (Input.GetKey(KeyCode.LeftShift))
         {
-            sprintInput = true;
+            dashInput = true;
         }
         if (Input.GetKeyUp(KeyCode.LeftShift))
         {
-            sprintInput= false;
+            dashInput = false;
         }
     }
 

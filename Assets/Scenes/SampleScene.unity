@@ -2081,9 +2081,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bb5917ae71566645b628889b15814ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  piority: 2
-  jumpForce: 5
+  piority: 1
   jumpTime: 0.3
+  jumpForce: 5
   coyoteTime: 0.1
 --- !u!114 &665301795
 MonoBehaviour:
@@ -2139,7 +2139,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveInput: 0
   jumpInput: 0
-  sprintInput: 0
+  dashInput: 0
 --- !u!114 &665301798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2153,10 +2153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   plrInput: {fileID: 0}
-  moveDir: 0
-  jump: 0
-  sprint: 0
-  AbilityPiority: 0
+  AbilityPriority: 0
 --- !u!114 &665301799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2169,7 +2166,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca33c397d19c1d244b2b6f6a3e605410, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  piority: 2
+  priority: 2
   dashSpeed: 15
   dashDuration: 0.2
   dashCooldown: 1

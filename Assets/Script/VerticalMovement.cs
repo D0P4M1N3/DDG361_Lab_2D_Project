@@ -2,21 +2,23 @@ using UnityEngine;
 
 public class VerticalMovement : MonoBehaviour
 {
-    public float piority = 0f;
+    public int piority = 0;
 
     private Rigidbody2D rb;
     private Ability ability;
     private GroundChecker groundChecker;
 
-    [SerializeField] private float jumpForce = 10f;
     [SerializeField] private float jumpTime = 0.3f; // max time you can hold jump
     private float jumpTimeCounter;
     private bool isJumping;
 
-    private float coyoteTimeCounter;
+    public float jumpForce = 10f;
+
 
     [Header("Coyote Time")]
     [SerializeField] private float coyoteTime = 0.1f;
+    private float coyoteTimeCounter;
+
 
     void Start()
     {
@@ -38,15 +40,21 @@ public class VerticalMovement : MonoBehaviour
             coyoteTimeCounter -= Time.deltaTime;
 
             if (isJumping && ability.jump)
+            {
                 rb.gravityScale = 1;
+
+            }
             else
+            {
                 rb.gravityScale = 5;
+
+            }
         }
 
-        HandleJump();
+        HandleJump(jumpForce);
     }
 
-    private void HandleJump()
+    private void HandleJump(float force)
     {
 
             if (ability.jump && coyoteTimeCounter > 0f)
@@ -54,7 +62,7 @@ public class VerticalMovement : MonoBehaviour
                 isJumping = true;
                 jumpTimeCounter = jumpTime;
 
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
                 coyoteTimeCounter = 0f;
             }
 
@@ -62,10 +70,10 @@ public class VerticalMovement : MonoBehaviour
             {
                 if (jumpTimeCounter > 0)
                 {
-                    if (ability.AbilityPiority <= piority)
+                    if (ability.AbilityPriority <= piority)
                     {
-                        ability.AbilityPiority = piority;
-                        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                        ability.AbilityPriority = piority;
+                        rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
                         jumpTimeCounter -= Time.deltaTime;
                     }
                 }
@@ -78,9 +86,9 @@ public class VerticalMovement : MonoBehaviour
             if (!ability.jump)
             {
                 isJumping = false;
-                ability.AbilityPiority = 0f;
+                ability.AbilityPriority = 0;
 
-        }
+            }
         
     }
 }
