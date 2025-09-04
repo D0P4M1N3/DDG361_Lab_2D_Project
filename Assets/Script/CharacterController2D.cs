@@ -8,7 +8,7 @@ public class CharacterController2D : MonoBehaviour
     public HorizontalMovement horizontalMovement;
     public VerticalMovement verticalMovement;
 
-    private Ability[] abilities;
+    [SerializeField] private Ability[] abilities;
 
     private void Awake()
     {
@@ -23,6 +23,8 @@ public class CharacterController2D : MonoBehaviour
         playerInput.HandleInput();
 
         horizontalMovement.Move(playerInput.MoveDirection);
+        verticalMovement.HandleJump(playerInput.JumpPressed, playerInput.JumpReleased);
+
 
         foreach (var ability in abilities)
         {
@@ -30,6 +32,5 @@ public class CharacterController2D : MonoBehaviour
 
         }
 
-        verticalMovement.HandleJump(playerInput.JumpPressed, playerInput.JumpReleased);
     }
 }

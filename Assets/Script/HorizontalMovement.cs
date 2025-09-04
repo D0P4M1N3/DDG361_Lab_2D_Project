@@ -7,8 +7,7 @@ public class HorizontalMovement : MonoBehaviour
     private Rigidbody2D rb;
     private GroundChecker groundChecker;
 
-    public float moveDirection { get; private set; }  
-    public float Facing { get; private set; } = 1f; 
+    public float moveDirection;
     public bool canMoveForward;
 
     private void Awake()
@@ -25,7 +24,7 @@ public class HorizontalMovement : MonoBehaviour
 
             if (direction != 0)
             {
-                Facing = Mathf.Sign(direction);
+                moveDirection = Mathf.Sign(direction);
             }
 
             Vector2 velocity = rb.linearVelocity;

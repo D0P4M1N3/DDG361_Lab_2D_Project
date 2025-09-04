@@ -25,11 +25,11 @@ public class PlayerAnimUpdater : MonoBehaviour
         anim.SetFloat("Speed", speedX);
         anim.SetBool("isGrounded", groundChecker.isGrounded);
 
-        if (horizontalMovement.Facing > 0)
+        if (horizontalMovement.moveDirection > 0)
         {
             spriteRenderer.flipX = false;
         }
-        else if (horizontalMovement.Facing < 0)
+        else if (horizontalMovement.moveDirection < 0)
         {
             spriteRenderer.flipX = true;
         }

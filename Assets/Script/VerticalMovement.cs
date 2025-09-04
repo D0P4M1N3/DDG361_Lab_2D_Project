@@ -7,7 +7,6 @@ public class VerticalMovement : MonoBehaviour
     [SerializeField] private float jumpForce = 10f;
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
-    [SerializeField] private float jumpCutMultiplier = 0.5f; 
 
     private Rigidbody2D rb;
     private GroundChecker groundChecker;
@@ -29,7 +28,10 @@ public class VerticalMovement : MonoBehaviour
         foreach (var ability in abilities)
         {
             if (ability.IsActive() && ability.priority > 0)
+            {
                 return;
+
+            }
         }
 
         if (groundChecker.isGrounded)
@@ -62,7 +64,7 @@ public class VerticalMovement : MonoBehaviour
         {
             rb.linearVelocity = new Vector2(
                 rb.linearVelocity.x,
-                rb.linearVelocity.y * jumpCutMultiplier
+                rb.linearVelocity.y * 0.5f
             );
         }
     }

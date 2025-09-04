@@ -1,49 +1,68 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class Dash : Ability
 {
+    [Header("Dash Settings")]
     [SerializeField] private float dashSpeed = 15f;
     [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 0.5f;
 
     private Rigidbody2D rb;
+    private HorizontalMovement horizontalMovement;
+
     private bool isDashing;
     private float dashTimer;
-    private HorizontalMovement horizontalMovement;
-    private float gravityScale;
+    private float originalGravity;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         horizontalMovement = GetComponent<HorizontalMovement>();
-        gravityScale = rb.gravityScale;
+        originalGravity = rb.gravityScale;
     }
 
     public override void Activate(PlayerInput input)
     {
+        if (!isDashing && input.DashPressed && CanUse())
+        {
+            StartDash();
+        }
+
         if (isDashing)
         {
+            UpdateDash();
 
-
-            dashTimer -= Time.deltaTime;
-            if (dashTimer <= 0f)
-            {
-                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-                isDashing = false;
-                rb.gravityScale = gravityScale;
-                //rb.bodyType = RigidbodyType2D.Dynamic;
-            }
-            return;
         }
+    }
 
-        if (input.DashPressed && CanUse())
+    private void StartDash()
+    {
+        isDashing = true;
+        dashTimer = dashDuration;
+        StartCooldown(dashCooldown);
+
+        rb.gravityScale = 0f;
+    }
+
+    private void UpdateDash()
+    {
+        dashTimer -= Time.deltaTime;
+        rb.linearVelocity = new Vector2(horizontalMovement.moveDirection * dashSpeed, 0f);
+
+        if (dashTimer <= 0f)
         {
-            rb.linearVelocity = new Vector2(horizontalMovement.Facing * dashSpeed, 0);
+            EndDash();
 
-            isDashing = true;
-            dashTimer = dashDuration;
-            StartCooldown();
         }
+    }
 
+    private void EndDash()
+    {
+        isDashing = false;
+        rb.gravityScale = originalGravity;
+
+        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
 
     public override bool IsActive() => isDashing;

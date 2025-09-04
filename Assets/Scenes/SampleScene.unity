@@ -1928,12 +1928,12 @@ GameObject:
   - component: {fileID: 665301788}
   - component: {fileID: 665301792}
   - component: {fileID: 665301787}
+  - component: {fileID: 665301800}
   - component: {fileID: 665301797}
   - component: {fileID: 665301796}
   - component: {fileID: 665301795}
   - component: {fileID: 665301794}
   - component: {fileID: 665301799}
-  - component: {fileID: 665301800}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -2149,8 +2149,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   priority: 0
   cooldown: 0.2
-  dashSpeed: 100
-  dashDuration: 1
+  dashSpeed: 15
+  dashDuration: 0.2
+  dashCooldown: 0.2
 --- !u!114 &665301800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2166,6 +2167,7 @@ MonoBehaviour:
   playerInput: {fileID: 0}
   horizontalMovement: {fileID: 0}
   verticalMovement: {fileID: 0}
+  abilities: []
 --- !u!1 &774866812
 GameObject:
   m_ObjectHideFlags: 0
