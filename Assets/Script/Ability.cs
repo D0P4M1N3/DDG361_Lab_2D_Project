@@ -16,7 +16,7 @@ public abstract class Ability : MonoBehaviour
         }
     }
 
-    public abstract void Activate(PlayerInput input);
+    public abstract void Activate(PlayerInput input);  ///Make it doesn't require player input: can reuse for enemiesAI
 
     public abstract bool IsActive();
 

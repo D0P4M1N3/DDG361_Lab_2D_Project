@@ -22,7 +22,7 @@ public class Dash : Ability
         originalGravity = rb.gravityScale;
     }
 
-    public override void Activate(PlayerInput input)
+    public override void Activate(PlayerInput input) //might work without from player input
     {
         if (!isDashing && input.DashPressed && CanUse())
         {
