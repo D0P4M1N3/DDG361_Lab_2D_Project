@@ -8,9 +8,8 @@ public class PlaceObject2D : MonoBehaviour
     public int RotationStep;
     public Vector3Int OriginCell;
 
-    public IEnumerable<Vector3Int> OccupiedCells(GridSystem grid) 
+    public IEnumerable<Vector3Int> OccupiedCells(GridSystem grid)
     {
         return buildableDefinition.GatherCells(OriginCell, RotationStep);
     }
-
 }

@@ -1,6 +1,6 @@
 ﻿using Builder2D;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class PlacementController2D : MonoBehaviour
 {
@@ -17,14 +17,12 @@ public class PlacementController2D : MonoBehaviour
     private BuildableDefinitionSO buildableDefinition;
     private GameObject previewObject;
     private int rotationSteps = 0;
+    private PlaceObject2D selectedObject; 
 
     void Start()
     {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (gridSystem == null)
-            gridSystem = FindObjectOfType<GridSystem>();
+        if (!mainCamera) mainCamera = Camera.main;
+        if (!gridSystem) gridSystem = FindObjectOfType<GridSystem>();
     }
 
     void Update()
@@ -33,7 +31,7 @@ public class PlacementController2D : MonoBehaviour
         HandleRotation();
         UpdatePreviewPosition();
         HandlePlacement();
-        HandleSelectionActions();
+        Hover(); 
     }
 
     private void HandleBuildableSelection()
@@ -42,124 +40,167 @@ public class PlacementController2D : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Alpha1 + i))
             {
-                if (previewObject != null)
-                    Destroy(previewObject);
+                if (previewObject) Destroy(previewObject);
 
                 buildableDefinition = sampleDefinitions[i];
                 previewObject = Instantiate(buildableDefinition.Prefab);
                 SetPreviewMode(previewObject, true);
+                rotationSteps = 0;
+                selectedObject = null;
             }
         }
     }
 
     private void HandleRotation()
     {
-        if (Input.GetKeyDown(KeyCode.R))
+        if (previewObject && Input.GetKeyDown(KeyCode.R))
             rotationSteps = (rotationSteps + 1) % 4;
     }
+
     private void UpdatePreviewPosition()
     {
-        if (previewObject == null) return;
+        if (!previewObject || buildableDefinition == null) return;
 
-        Vector3Int cell = gridSystem.WorldToCell(GetMouseWorldPosition());
-        Vector3 baseOffset = new Vector3((buildableDefinition.BaseFootprint.x - 1) * cellSize / 2f,
-                                         (buildableDefinition.BaseFootprint.y - 1) * cellSize / 2f, 0f);
-        Vector3 rotatedOffset = VectorUtils.RotateOffset(baseOffset, rotationSteps);
-        Vector3 previewPos = gridSystem.CellToWorld(cell) + rotatedOffset;
+        Vector3Int baseCell = gridSystem.WorldToCell(GetMouseWorldPosition());
+        var footprint = buildableDefinition.GatherCells(baseCell, rotationSteps);
+
+        int minX = int.MaxValue, minY = int.MaxValue;
+        int maxX = int.MinValue, maxY = int.MinValue;
+        foreach (var c in footprint)
+        {
+            if (c.x < minX) minX = c.x;
+            if (c.y < minY) minY = c.y;
+            if (c.x > maxX) maxX = c.x;
+            if (c.y > maxY) maxY = c.y;
+        }
+
+        float centerCellX = (minX + maxX) / 2f;
+        float centerCellY = (minY + maxY) / 2f;
+
+        Vector3 previewPos = new Vector3(
+            gridSystem.origin.x + (centerCellX + 0.5f) * gridSystem.cellSize,
+            gridSystem.origin.y + (centerCellY + 0.5f) * gridSystem.cellSize,
+            0f
+        );
 
         previewObject.transform.position = previewPos;
-        previewObject.transform.rotation = Quaternion.Euler(0f, 0f, rotationSteps * VectorUtils.ROTATION_STEP_ANGLE);
+        previewObject.transform.rotation = Quaternion.Euler(0, 0, rotationSteps * VectorUtils.ROTATION_STEP_ANGLE);
 
-        // Update preview color based on placement validity
-        var footprint = buildableDefinition.GatherCells(cell, rotationSteps);
         bool canPlace = true;
         foreach (var c in footprint)
-            if (gridSystem.IsCellOccupied(c))
+        {
+            if (!gridSystem.IsCellInBounds(c) || gridSystem.IsCellOccupied(c))
+            {
                 canPlace = false;
+                break;
+            }
+        }
 
         SetPreviewColor(previewObject, canPlace);
     }
 
+    private void HandlePlacement()
+    {
+        if (!previewObject || buildableDefinition == null) return;
+        if (!Input.GetMouseButton(0)) return;
+
+        Vector3Int baseCell = gridSystem.WorldToCell(GetMouseWorldPosition());
+        var footprint = buildableDefinition.GatherCells(baseCell, rotationSteps);
+
+        foreach (var c in footprint)
+        {
+            if (!gridSystem.IsCellInBounds(c) || gridSystem.IsCellOccupied(c))
+                return;
+        }
+
+        int minX = int.MaxValue, minY = int.MaxValue;
+        int maxX = int.MinValue, maxY = int.MinValue;
+        foreach (var c in footprint)
+        {
+            if (c.x < minX) minX = c.x;
+            if (c.y < minY) minY = c.y;
+            if (c.x > maxX) maxX = c.x;
+            if (c.y > maxY) maxY = c.y;
+        }
+
+        float centerCellX = (minX + maxX) / 2f;
+        float centerCellY = (minY + maxY) / 2f;
+
+        Vector3 placePos = new Vector3(
+            gridSystem.origin.x + (centerCellX + 0.5f) * gridSystem.cellSize,
+            gridSystem.origin.y + (centerCellY + 0.5f) * gridSystem.cellSize,
+            0f
+        );
+
+        GameObject placedObject = Instantiate(buildableDefinition.Prefab, placePos, Quaternion.Euler(0, 0, rotationSteps * VectorUtils.ROTATION_STEP_ANGLE));
+        PlaceObject2D placedData = placedObject.AddComponent<PlaceObject2D>();
+        placedData.buildableDefinition = buildableDefinition;
+        placedData.RotationStep = rotationSteps;
+        placedData.OriginCell = baseCell;
+
+        gridSystem.SetOccupied(footprint, placedData);
+
+        if (selectedObject != null)
+        {
+            Destroy(previewObject);
+            previewObject = null;
+            selectedObject = null;
+        }
+    }
+
+    private void Hover()
+    {
+        Vector3Int hoveredCell = gridSystem.WorldToCell(GetMouseWorldPosition());
+
+        if (!gridSystem.occupied.TryGetValue(hoveredCell, out PlaceObject2D obj))
+            return;
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            IEnumerable<Vector3Int> occupiedCells = obj.OccupiedCells(gridSystem);
+            gridSystem.ClearOccupied(occupiedCells);
+            Destroy(obj.gameObject);
+            return;
+        }
+
+        if (Input.GetKey(KeyCode.R))
+        {
+            gridSystem.ClearOccupied(obj.OccupiedCells(gridSystem));
+
+            selectedObject = obj;
+            buildableDefinition = obj.buildableDefinition;
+            rotationSteps = obj.RotationStep;
+
+            if (previewObject) Destroy(previewObject);
+            previewObject = Instantiate(buildableDefinition.Prefab);
+            SetPreviewMode(previewObject, true);
+
+            Destroy(obj.gameObject); 
+        }
+
+    }
+
     private void SetPreviewColor(GameObject obj, bool valid)
     {
-        foreach (var renderer in obj.GetComponentsInChildren<SpriteRenderer>())
-        {
-            renderer.color = valid ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
-        }
+        Color color = valid ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.3f, 0.3f, 0.5f);
+        foreach (var r in obj.GetComponentsInChildren<SpriteRenderer>())
+            r.color = color;
     }
 
     private void SetPreviewMode(GameObject obj, bool active)
     {
-        foreach (var renderer in obj.GetComponentsInChildren<SpriteRenderer>())
+        foreach (var r in obj.GetComponentsInChildren<SpriteRenderer>())
         {
-            Color c = renderer.color;
+            Color c = r.color;
             c.a = active ? 0.5f : 1f;
-            renderer.color = c;
-        }
-    }
-
-    private void HandlePlacement()
-    {
-        if (previewObject == null) return;
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector3Int originCell = gridSystem.WorldToCell(previewObject.transform.position);
-            var footprint = buildableDefinition.GatherCells(originCell, rotationSteps);
-
-            foreach (var c in footprint)
-            {
-                if (gridSystem.IsCellOccupied(c))
-                {
-                    Debug.LogWarning("Cannot place — cell occupied!");
-                    return;
-                }
-            }
-
-            GameObject placedObject = Instantiate(buildableDefinition.Prefab, previewObject.transform.position, previewObject.transform.rotation);
-            PlaceObject2D placeData = placedObject.AddComponent<PlaceObject2D>();
-            placeData.buildableDefinition = buildableDefinition;
-            placeData.RotationStep = rotationSteps;
-            placeData.OriginCell = originCell;
-
-            gridSystem.SetOccupied(footprint, placeData);
-        }
-    }
-
-    private void HandleSelectionActions()
-    {
-        if (!Input.GetMouseButtonDown(1)) return;
-
-        Vector3Int clickedCell = gridSystem.WorldToCell(GetMouseWorldPosition());
-        PlaceObject2D obj = gridSystem.occupied.ContainsKey(clickedCell) ? gridSystem.occupied[clickedCell] : null;
-
-        if (obj == null) return;
-
-        if (Input.GetKey(KeyCode.M))
-        {
-            if (previewObject != null) Destroy(previewObject);
-
-            buildableDefinition = obj.buildableDefinition;
-            rotationSteps = obj.RotationStep;
-
-            previewObject = Instantiate(buildableDefinition.Prefab);
-            SetPreviewMode(previewObject, true);
-
-            gridSystem.ClearOccupied(obj.OccupiedCells(null));
-            Destroy(obj.gameObject);
-        }
-
-        if (Input.GetKey(KeyCode.Delete))
-        {
-            gridSystem.ClearOccupied(obj.OccupiedCells(null));
-            Destroy(obj.gameObject);
+            r.color = c;
         }
     }
 
     private Vector3 GetMouseWorldPosition()
     {
         Vector3 mousePos = Input.mousePosition;
-        mousePos.z = Mathf.Abs(mainCamera.transform.position.z);
+        mousePos.z = -mainCamera.transform.position.z;
         return mainCamera.ScreenToWorldPoint(mousePos);
     }
 }
