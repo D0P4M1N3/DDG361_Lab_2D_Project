@@ -22,13 +22,23 @@ public class PlayerAnimUpdater : MonoBehaviour
     {
         float speedX = Mathf.Abs(rb.linearVelocity.x);
 
-        anim.SetFloat("Speed", speedX);
+        if(groundChecker.isGrounded)
+        {
+            anim.SetFloat("Speed", speedX);
+
+        }
+        else if (!groundChecker.isGrounded)
+        {
+            anim.SetFloat("Speed", 0f);
+        }
+
         anim.SetBool("isGrounded", groundChecker.isGrounded);
 
         if (horizontalMovement.moveDirection > 0)
         {
             spriteRenderer.flipX = false;
         }
+
         else if (horizontalMovement.moveDirection < 0)
         {
             spriteRenderer.flipX = true;
